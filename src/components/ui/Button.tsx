@@ -1,38 +1,37 @@
-import { ReactNode } from "react";
+import { ButtonHTMLAttributes, ReactNode } from "react";
 
-export type ButtonType = "button" | "submit" | "reset";
-
-interface OwnProps {
-  onClick?: () => void;
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  disabled?: boolean;
-  type?: ButtonType;
   fullWidth?: boolean;
   isCancel?: boolean;
   noShadow?: boolean;
   isSmall?: boolean;
 }
 
-const Button: React.FC<OwnProps> = ({
-  onClick,
+export default function Button({
   children,
-  disabled,
-  type,
   fullWidth,
   isCancel,
   noShadow,
   isSmall,
-}) => {
+  className = "",
+  type = "button",
+  ...props
+}: ButtonProps) {
   return (
     <button
-      className={`${fullWidth ? "w-full" : ""} ${isCancel ? "bg-red-50 text-error border border-red-200" : "bg-main text-white"} ${noShadow ? "" : "shadow-sm"} ${isSmall ? "py-1.5 px-3 text-sm" : "py-2.5 px-4"}  hover:opacity-90 transition-opacity rounded-lg font-medium disabled:opacity-50 cursor-pointer`}
       type={type}
-      onClick={onClick}
-      disabled={disabled}
+      className={`
+        ${fullWidth ? "w-full" : ""}
+        ${isCancel ? "bg-red-50 text-error border border-red-200 hover:bg-red-100" : "bg-main text-white hover:opacity-90"}
+        ${noShadow ? "" : "shadow-sm"}
+        ${isSmall ? "py-1.5 px-3 text-sm" : "py-2.5 px-4"}
+        transition-colors rounded-lg font-medium disabled:opacity-50 cursor-pointer
+        ${className}
+      `}
+      {...props}
     >
       {children}
     </button>
   );
-};
-
-export default Button;
+}
