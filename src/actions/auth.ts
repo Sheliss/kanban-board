@@ -65,7 +65,11 @@ export async function registerUser(
     });
   } catch (err) {
     console.log(err);
-    return { error: `${err}` };
+    return {
+      errors: {
+        general: `${err}`,
+      },
+    };
   }
 
   redirect("/login");
@@ -121,11 +125,19 @@ export async function loginUser(
       return { errors: { general: "Invalid email or password" } };
     }
 
-    // Create secure httpOnly cookie session
     await createSession(user.id);
   } catch (err) {
     return { errors: { general: `${err}` } };
   }
 
   redirect("/dashboard");
+}
+
+//Logout
+
+import { destroySession } from "@/lib/auth";
+
+export async function logoutUser() {
+  await destroySession();
+  redirect("/login");
 }
