@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import CreateInviteForm from "@/components/workspace/CreateInviteForm";
+import CreateTaskForm from "@/components/workspace/CreateTaskForm";
 
 interface WorkspacePageProps {
   params: Promise<{ workspaceId: string }>;
@@ -154,7 +155,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
 
                 <div className="space-y-2 min-h-[150px]">
                   {board.tasks.length === 0 ? (
-                    <div className="flex items-center justify-center h-24 border border-dashed border-border rounded-lg">
+                    <div className="flex items-center justify-center h-20 border border-dashed border-border rounded-lg">
                       <p className="text-xs text-text-muted italic">
                         No tasks yet
                       </p>
@@ -163,14 +164,33 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                     board.tasks.map((task) => (
                       <div
                         key={task.id}
-                        className="p-3 bg-surface border border-border rounded-lg shadow-sm"
+                        className="p-3 bg-surface border border-border rounded-lg shadow-sm space-y-1.5"
                       >
                         <p className="text-sm font-medium text-text-main">
                           {task.title}
                         </p>
+                        {task.description && (
+                          <p className="text-xs text-text-muted line-clamp-2">
+                            {task.description}
+                          </p>
+                        )}
+                        {task.estimatedHours !== null && (
+                          <div className="flex justify-end">
+                            <span className="text-[10px] px-1.5 py-0.5 bg-background text-text-muted rounded border border-border font-mono">
+                              ⏱ {task.estimatedHours}h
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
+
+                  <div className="pt-1">
+                    <CreateTaskForm
+                      boardId={board.id}
+                      workspaceId={workspaceId}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
