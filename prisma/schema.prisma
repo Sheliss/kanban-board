@@ -31,6 +31,18 @@ model Workspace {
   updatedAt   DateTime           @updatedAt
   members     WorkspaceMember[]
   boards      Board[]
+  invites     Invite[]
+}
+
+model Invite {
+  id          String    @id @default(cuid())
+  code        String    @unique @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  maxUses     Int?
+  useCount    Int       @default(0)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
 }
 
 model WorkspaceMember {
