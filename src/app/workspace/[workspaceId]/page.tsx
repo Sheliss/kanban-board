@@ -23,10 +23,16 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
     include: {
       workspace: {
         include: {
-          members: {
-            include: { user: true },
-          },
+          members: { include: { user: true } },
           invites: true,
+          boards: {
+            orderBy: { position: "asc" },
+            include: {
+              tasks: {
+                orderBy: { position: "asc" },
+              },
+            },
+          },
         },
       },
     },
@@ -124,6 +130,50 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                 Only workspace admins can view and create invite links.
               </p>
             )}
+          </div>
+        </div>
+        <div className="bg-surface p-6 rounded-2xl shadow-xl border border-border space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-text-main">Project Boards</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            {workspace.boards.map((board) => (
+              <div
+                key={board.id}
+                className="bg-background border border-border rounded-xl p-4 space-y-3"
+              >
+                <div className="flex justify-between items-center pb-2 border-b border-border">
+                  <h3 className="font-semibold text-text-main text-sm">
+                    {board.name}
+                  </h3>
+                  <span className="text-xs px-2 py-0.5 bg-surface text-text-muted rounded-full font-medium border border-border">
+                    {board.tasks.length}
+                  </span>
+                </div>
+
+                <div className="space-y-2 min-h-[150px]">
+                  {board.tasks.length === 0 ? (
+                    <div className="flex items-center justify-center h-24 border border-dashed border-border rounded-lg">
+                      <p className="text-xs text-text-muted italic">
+                        No tasks yet
+                      </p>
+                    </div>
+                  ) : (
+                    board.tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="p-3 bg-surface border border-border rounded-lg shadow-sm"
+                      >
+                        <p className="text-sm font-medium text-text-main">
+                          {task.title}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

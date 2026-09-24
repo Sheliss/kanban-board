@@ -59,6 +59,22 @@ export async function createWorkspace(
           role: "ADMIN",
         },
       });
+
+      const defaultBoards = [
+        { name: "To Do", position: 0 },
+        { name: "In Progress", position: 1 },
+        { name: "Done", position: 2 },
+      ];
+
+      for (const board of defaultBoards) {
+        await tx.board.create({
+          data: {
+            name: board.name,
+            position: board.position,
+            workspaceId: workspace.id,
+          },
+        });
+      }
     });
   } catch (err) {
     return {
