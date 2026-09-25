@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import CreateInviteForm from "@/components/workspace/CreateInviteForm";
-import CreateTaskForm from "@/components/workspace/CreateTaskForm";
+import KanbanBoard from "@/components/workspace/KanbanBoard";
 
 interface WorkspacePageProps {
   params: Promise<{ workspaceId: string }>;
@@ -137,64 +137,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-text-main">Project Boards</h2>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-            {workspace.boards.map((board) => (
-              <div
-                key={board.id}
-                className="bg-background border border-border rounded-xl p-4 space-y-3"
-              >
-                <div className="flex justify-between items-center pb-2 border-b border-border">
-                  <h3 className="font-semibold text-text-main text-sm">
-                    {board.name}
-                  </h3>
-                  <span className="text-xs px-2 py-0.5 bg-surface text-text-muted rounded-full font-medium border border-border">
-                    {board.tasks.length}
-                  </span>
-                </div>
-
-                <div className="space-y-2 min-h-[150px]">
-                  {board.tasks.length === 0 ? (
-                    <div className="flex items-center justify-center h-20 border border-dashed border-border rounded-lg">
-                      <p className="text-xs text-text-muted italic">
-                        No tasks yet
-                      </p>
-                    </div>
-                  ) : (
-                    board.tasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className="p-3 bg-surface border border-border rounded-lg shadow-sm space-y-1.5"
-                      >
-                        <p className="text-sm font-medium text-text-main">
-                          {task.title}
-                        </p>
-                        {task.description && (
-                          <p className="text-xs text-text-muted line-clamp-2">
-                            {task.description}
-                          </p>
-                        )}
-                        {task.estimatedHours !== null && (
-                          <div className="flex justify-end">
-                            <span className="text-[10px] px-1.5 py-0.5 bg-background text-text-muted rounded border border-border font-mono">
-                              ⏱ {task.estimatedHours}h
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-
-                  <div className="pt-1">
-                    <CreateTaskForm
-                      boardId={board.id}
-                      workspaceId={workspaceId}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <KanbanBoard boards={workspace.boards} workspaceId={workspaceId} />
         </div>
       </div>
     </div>

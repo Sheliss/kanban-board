@@ -68,3 +68,28 @@ export async function createTask(formData: FormData) {
 
   redirect(`/workspace/${workspaceId}`);
 }
+
+export async function moveTask(
+  taskId: string,
+  newBoardId: string,
+  newPosition: number,
+  workspaceId: string,
+) {
+  const session = await getSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const membership = await db.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.userId, workspaceId } },
+  });
+  if (!membership) throw new Error("Unauthorized");
+
+  await db.task.update({
+    where: { id: taskId },
+    data: {
+      boardId: newBoardId,
+      position: newPosition,
+    },
+  });
+
+  redirect(`/workspace/${workspaceId}`);
+}
