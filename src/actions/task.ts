@@ -93,3 +93,24 @@ export async function moveTask(
 
   redirect(`/workspace/${workspaceId}`);
 }
+
+export async function updateTaskProgress(
+  taskId: string,
+  progress: number,
+  workspaceId: string,
+) {
+  const session = await getSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const membership = await db.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.userId, workspaceId } },
+  });
+  if (!membership) throw new Error("Unauthorized");
+
+  await db.task.update({
+    where: { id: taskId },
+    data: { progress: Math.min(100, Math.max(0, progress)) },
+  });
+
+  redirect(`/workspace/${workspaceId}`);
+}

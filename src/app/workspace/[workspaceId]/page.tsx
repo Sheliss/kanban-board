@@ -31,6 +31,14 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
             include: {
               tasks: {
                 orderBy: { position: "asc" },
+                include: {
+                  comments: {
+                    orderBy: { createdAt: "asc" },
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
               },
             },
           },
