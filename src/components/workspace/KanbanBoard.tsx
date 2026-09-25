@@ -6,11 +6,9 @@ import {
   Draggable,
   DropResult,
 } from "@hello-pangea/dnd";
-import { moveTask, updateTaskProgress } from "@/actions/task";
+import { moveTask } from "@/actions/task";
 import CreateTaskForm from "./CreateTaskForm";
 import { useState } from "react";
-import Button from "../ui/Button";
-import { addComment } from "@/actions/comment";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { pusherClient } from "@/lib/pusher-client";
@@ -69,23 +67,6 @@ export default function KanbanBoard({ boards, workspaceId }: KanbanBoardProps) {
     const newPosition = destination.index;
 
     await moveTask(taskId, newBoardId, newPosition, workspaceId);
-  };
-
-  const handlePostComment = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!selectedTask) return;
-
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-
-    const res = await addComment(formData);
-    if (res.success && res.comment) {
-      setSelectedTask({
-        ...selectedTask,
-        comments: [...selectedTask.comments, res.comment],
-      });
-      form.reset();
-    }
   };
 
   useEffect(() => {
