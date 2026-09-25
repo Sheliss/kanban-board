@@ -11,6 +11,9 @@ import CreateTaskForm from "./CreateTaskForm";
 import { useState } from "react";
 import Button from "../ui/Button";
 import { addComment } from "@/actions/comment";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { pusherClient } from "@/lib/pusher-client";
 
 interface Comment {
   id: string;
@@ -44,6 +47,7 @@ interface KanbanBoardProps {
 }
 
 export default function KanbanBoard({ boards, workspaceId }: KanbanBoardProps) {
+  const router = useRouter();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const handleDragEnd = async (result: DropResult) => {
@@ -81,6 +85,40 @@ export default function KanbanBoard({ boards, workspaceId }: KanbanBoardProps) {
       form.reset();
     }
   };
+
+  useEffect(() => {
+    const channel = pusherClient.subscribe(`workspace-${workspaceId}`);
+
+    channel.bind("task-moved", () => {
+      router.refresh();
+    });
+
+    channel.bind(
+      "new-comment",
+      (data: { taskId: string; comment: Comment }) => {
+        router.refresh();
+
+        setSelectedTask((prev) => {
+          if (prev && prev.id === data.taskId) {
+            const alreadyExists = prev.comments.some(
+              (c) => c.id === data.comment.id,
+            );
+            if (alreadyExists) return prev;
+
+            return {
+              ...prev,
+              comments: [...prev.comments, data.comment],
+            };
+          }
+          return prev;
+        });
+      },
+    );
+
+    return () => {
+      pusherClient.unsubscribe(`workspace-${workspaceId}`);
+    };
+  }, [workspaceId, router]);
 
   return (
     <>

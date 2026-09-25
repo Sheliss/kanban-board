@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { pusherServer } from "@/lib/pusher";
 
 const taskSchema = z.object({
   title: z
@@ -89,6 +90,11 @@ export async function moveTask(
       boardId: newBoardId,
       position: newPosition,
     },
+  });
+
+  await pusherServer.trigger(`workspace-${workspaceId}`, "task-moved", {
+    taskId,
+    newBoardId,
   });
 
   redirect(`/workspace/${workspaceId}`);

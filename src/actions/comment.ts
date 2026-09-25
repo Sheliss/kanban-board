@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { pusherServer } from "@/lib/pusher";
 
 const commentSchema = z.object({
   content: z.string().min(1, "Comment cannot be empty"),
@@ -43,6 +44,11 @@ export async function addComment(formData: FormData) {
         select: { name: true, email: true },
       },
     },
+  });
+
+  await pusherServer.trigger(`workspace-${workspaceId}`, "new-comment", {
+    taskId,
+    comment: newComment,
   });
 
   revalidatePath(`/workspace/${workspaceId}`);
