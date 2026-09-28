@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect, useOptimistic, startTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   DragDropContext,
   Droppable,
@@ -7,33 +9,10 @@ import {
   DropResult,
 } from "@hello-pangea/dnd";
 import { moveTask } from "@/actions/task";
-import CreateTaskForm from "./CreateTaskForm";
-import { useState } from "react";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { pusherClient } from "@/lib/pusher-client";
+import CreateTaskForm from "./CreateTaskForm";
+import KanbanCard, { Task, Comment } from "./KanbanCard";
 import TaskDetailModal from "./TaskDetailModal";
-import KanbanCard from "./KanbanCard";
-
-interface Comment {
-  id: string;
-  content: string;
-  createdAt: Date;
-  user: {
-    name: string | null;
-    email: string;
-  };
-}
-
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  estimatedHours: number | null;
-  position: number;
-  progress: number;
-  comments: Comment[];
-}
 
 interface Board {
   id: string;
@@ -50,26 +29,42 @@ export default function KanbanBoard({ boards, workspaceId }: KanbanBoardProps) {
   const router = useRouter();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  const handleDragEnd = async (result: DropResult) => {
-    const { destination, source, draggableId } = result;
+  const [optimisticBoards, setOptimisticBoards] = useOptimistic(
+    boards,
+    (
+      state,
+      update: {
+        sourceId: string;
+        destId: string;
+        sourceIndex: number;
+        destIndex: number;
+        taskId: string;
+      },
+    ) => {
+      const newBoards = JSON.parse(JSON.stringify(state)) as Board[];
+      const sourceBoard = newBoards.find(
+        (board) => board.id === update.sourceId,
+      );
+      const destBoard = newBoards.find((board) => board.id === update.destId);
 
-    if (!destination) return;
+      if (!sourceBoard || !destBoard) return state;
 
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    )
-      return;
+      const [movedTask] = sourceBoard.tasks.splice(update.sourceIndex, 1);
+      if (movedTask) {
+        movedTask.boardId = update.destId;
+        destBoard.tasks.splice(update.destIndex, 0, movedTask);
 
-    await moveTask({
-      taskId: draggableId,
-      sourceBoardId: source.droppableId,
-      sourceIndex: source.index,
-      destBoardId: destination.droppableId,
-      destIndex: destination.index,
-      workspaceId,
-    });
-  };
+        sourceBoard.tasks.forEach((task, index) => {
+          task.position = index;
+        });
+        destBoard.tasks.forEach((task, index) => {
+          task.position = index;
+        });
+      }
+
+      return newBoards;
+    },
+  );
 
   useEffect(() => {
     const channel = pusherClient.subscribe(`workspace-${workspaceId}`);
@@ -105,11 +100,44 @@ export default function KanbanBoard({ boards, workspaceId }: KanbanBoardProps) {
     };
   }, [workspaceId, router]);
 
+  const handleDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+    if (!destination) return;
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    )
+      return;
+
+    startTransition(() => {
+      setOptimisticBoards({
+        sourceId: source.droppableId,
+        destId: destination.droppableId,
+        sourceIndex: source.index,
+        destIndex: destination.index,
+        taskId: draggableId,
+      });
+    });
+
+    try {
+      await moveTask({
+        taskId: draggableId,
+        sourceBoardId: source.droppableId,
+        sourceIndex: source.index,
+        destBoardId: destination.droppableId,
+        destIndex: destination.index,
+        workspaceId,
+      });
+    } catch (err) {
+      console.error("Failed to move task:", err);
+    }
+  };
+
   return (
     <>
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-          {boards.map((board) => (
+          {optimisticBoards.map((board) => (
             <Droppable key={board.id} droppableId={board.id}>
               {(provided, snapshot) => (
                 <div
@@ -142,7 +170,6 @@ export default function KanbanBoard({ boards, workspaceId }: KanbanBoardProps) {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            onClick={() => setSelectedTask(task)}
                           >
                             <KanbanCard
                               task={task}

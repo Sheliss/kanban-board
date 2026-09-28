@@ -18,6 +18,7 @@ export interface Task {
   position: number;
   progress: number;
   comments: Comment[];
+  boardId: string;
 }
 
 interface KanbanCardProps {
