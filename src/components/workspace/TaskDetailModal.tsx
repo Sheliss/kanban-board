@@ -42,7 +42,7 @@ export default function TaskDetailModal({
         }
       }}
     >
-      <div className="bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex justify-between items-start p-6 border-b border-border">
           <h2 className="text-xl font-bold text-text-main">{task.title}</h2>
           <button
