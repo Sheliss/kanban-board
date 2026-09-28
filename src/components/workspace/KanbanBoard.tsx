@@ -58,15 +58,17 @@ export default function KanbanBoard({ boards, workspaceId }: KanbanBoardProps) {
     if (
       destination.droppableId === source.droppableId &&
       destination.index === source.index
-    ) {
+    )
       return;
-    }
 
-    const taskId = draggableId;
-    const newBoardId = destination.droppableId;
-    const newPosition = destination.index;
-
-    await moveTask(taskId, newBoardId, newPosition, workspaceId);
+    await moveTask({
+      taskId: draggableId,
+      sourceBoardId: source.droppableId,
+      sourceIndex: source.index,
+      destBoardId: destination.droppableId,
+      destIndex: destination.index,
+      workspaceId,
+    });
   };
 
   useEffect(() => {

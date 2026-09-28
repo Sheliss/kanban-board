@@ -20,6 +20,15 @@ const taskSchema = z.object({
   workspaceId: z.string(),
 });
 
+interface MoveTaskParams {
+  taskId: string;
+  sourceBoardId: string;
+  sourceIndex: number;
+  destBoardId: string;
+  destIndex: number;
+  workspaceId: string;
+}
+
 export async function createTask(formData: FormData) {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -70,12 +79,14 @@ export async function createTask(formData: FormData) {
   redirect(`/workspace/${workspaceId}`);
 }
 
-export async function moveTask(
-  taskId: string,
-  newBoardId: string,
-  newPosition: number,
-  workspaceId: string,
-) {
+export async function moveTask({
+  taskId,
+  sourceBoardId,
+  sourceIndex,
+  destBoardId,
+  destIndex,
+  workspaceId,
+}: MoveTaskParams) {
   const session = await getSession();
   if (!session) throw new Error("Unauthorized");
 
@@ -84,17 +95,57 @@ export async function moveTask(
   });
   if (!membership) throw new Error("Unauthorized");
 
-  await db.task.update({
-    where: { id: taskId },
-    data: {
-      boardId: newBoardId,
-      position: newPosition,
-    },
+  await db.$transaction(async (tx) => {
+    if (sourceBoardId === destBoardId) {
+      const tasks = await tx.task.findMany({
+        where: { boardId: sourceBoardId },
+        orderBy: { position: "asc" },
+      });
+
+      const [movedTask] = tasks.splice(sourceIndex, 1);
+      tasks.splice(destIndex, 0, movedTask);
+
+      for (let i = 0; i < tasks.length; i++) {
+        await tx.task.update({
+          where: { id: tasks[i].id },
+          data: { position: i },
+        });
+      }
+    } else {
+      const sourceTasks = await tx.task.findMany({
+        where: { boardId: sourceBoardId },
+        orderBy: { position: "asc" },
+      });
+
+      const destTasks = await tx.task.findMany({
+        where: { boardId: destBoardId },
+        orderBy: { position: "asc" },
+      });
+
+      const [movedTask] = sourceTasks.splice(sourceIndex, 1);
+      destTasks.splice(destIndex, 0, movedTask);
+
+      for (let i = 0; i < sourceTasks.length; i++) {
+        await tx.task.update({
+          where: { id: sourceTasks[i].id },
+          data: { position: i },
+        });
+      }
+
+      for (let i = 0; i < destTasks.length; i++) {
+        await tx.task.update({
+          where: { id: destTasks[i].id },
+          data: {
+            position: i,
+            boardId: destBoardId,
+          },
+        });
+      }
+    }
   });
 
   await pusherServer.trigger(`workspace-${workspaceId}`, "task-moved", {
     taskId,
-    newBoardId,
   });
 
   redirect(`/workspace/${workspaceId}`);
