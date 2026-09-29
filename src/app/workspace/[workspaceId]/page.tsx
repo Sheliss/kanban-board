@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import CreateInviteForm from "@/components/workspace/CreateInviteForm";
 import KanbanBoard from "@/components/workspace/KanbanBoard";
+import { deleteInvite } from "@/actions/invite";
 
 interface WorkspacePageProps {
   params: Promise<{ workspaceId: string }>;
@@ -80,7 +81,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
             <h2 className="text-xl font-bold text-text-main">
               Workspace Members
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
               {workspace.members.map((m) => (
                 <div
                   key={m.id}
@@ -104,15 +105,22 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
             <h2 className="text-xl font-bold text-text-main">Invite Links</h2>
 
             {isAdmin ? (
-              <div className="space-y-4">
+              <div className={`${workspace.invites.length > 0 && "space-y-4"}`}>
                 <p className="text-sm text-text-muted">
                   Create invite links for team members to join this workspace.
                 </p>
 
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                   {workspace.invites.map((inv) => {
                     const isExpired =
                       inv.maxUses !== null && inv.useCount >= inv.maxUses;
+
+                    const deleteInviteAction = deleteInvite.bind(
+                      null,
+                      inv.id,
+                      workspace.id,
+                    );
+
                     return (
                       <div
                         key={inv.id}
@@ -128,12 +136,22 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                             {isExpired && "• (Expired)"}
                           </p>
                         </div>
+                        <form action={deleteInviteAction}>
+                          <button
+                            type="submit"
+                            className="px-2.5 py-1 text-xs text-error hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors rounded-lg font-medium cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </form>
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="border-t border-border pt-3">
+                <div
+                  className={`${workspace.invites.length > 0 && "border-t border-border pt-3"}`}
+                >
                   <CreateInviteForm workspaceId={workspace.id} />
                 </div>
               </div>
