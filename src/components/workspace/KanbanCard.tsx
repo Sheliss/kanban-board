@@ -19,6 +19,12 @@ export interface Task {
   progress: number;
   comments: Comment[];
   boardId: string;
+  creatorId: string | null;
+  assigneeId: string | null;
+  assignee?: {
+    name: string | null;
+    email: string;
+  } | null;
 }
 
 interface KanbanCardProps {

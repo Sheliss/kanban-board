@@ -32,6 +32,9 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
               tasks: {
                 orderBy: { position: "asc" },
                 include: {
+                  assignee: {
+                    select: { name: true, email: true },
+                  },
                   comments: {
                     orderBy: { createdAt: "asc" },
                     include: {
@@ -145,7 +148,13 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-text-main">Project Boards</h2>
           </div>
-          <KanbanBoard boards={workspace.boards} workspaceId={workspaceId} />
+          <KanbanBoard
+            boards={workspace.boards}
+            workspaceId={workspaceId}
+            members={workspace.members}
+            currentUserId={session.userId}
+            isAdmin={isAdmin}
+          />
         </div>
       </div>
     </div>

@@ -20,12 +20,33 @@ interface Board {
   tasks: Task[];
 }
 
+export interface WorkspaceMemberWithUser {
+  id: string;
+  role: "ADMIN" | "MEMBER";
+  userId: string;
+  workspaceId: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+}
+
 interface KanbanBoardProps {
   boards: Board[];
   workspaceId: string;
+  currentUserId: string;
+  members: WorkspaceMemberWithUser[];
+  isAdmin: boolean;
 }
 
-export default function KanbanBoard({ boards, workspaceId }: KanbanBoardProps) {
+export default function KanbanBoard({
+  boards,
+  workspaceId,
+  currentUserId,
+  members,
+  isAdmin,
+}: KanbanBoardProps) {
   const router = useRouter();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
@@ -186,6 +207,7 @@ export default function KanbanBoard({ boards, workspaceId }: KanbanBoardProps) {
                     <CreateTaskForm
                       boardId={board.id}
                       workspaceId={workspaceId}
+                      members={members}
                     />
                   </div>
                 </div>
@@ -199,6 +221,8 @@ export default function KanbanBoard({ boards, workspaceId }: KanbanBoardProps) {
         <TaskDetailModal
           task={selectedTask}
           workspaceId={workspaceId}
+          currentUserId={currentUserId}
+          isAdmin={isAdmin}
           onClose={() => setSelectedTask(null)}
           onCommentAdded={(newComment) => {
             setSelectedTask({

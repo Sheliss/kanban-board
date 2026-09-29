@@ -4,14 +4,24 @@ import { useState } from "react";
 import { createTask } from "@/actions/task";
 import Button from "@/components/ui/Button";
 
+interface Member {
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+}
+
 interface CreateTaskFormProps {
   boardId: string;
   workspaceId: string;
+  members: Member[];
 }
 
 export default function CreateTaskForm({
   boardId,
   workspaceId,
+  members,
 }: CreateTaskFormProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -50,6 +60,23 @@ export default function CreateTaskForm({
         rows={2}
         className="w-full px-2.5 py-1.5 text-xs bg-background border border-border rounded-md text-text-main focus:outline-none focus:ring-1 focus:ring-main resize-none"
       />
+
+      <div>
+        <label className="block text-[10px] font-medium text-text-muted mb-1">
+          Assignee
+        </label>
+        <select
+          name="assigneeId"
+          className="w-full px-2 py-1 text-xs bg-background border border-border rounded-md text-text-main focus:outline-none focus:ring-1 focus:ring-main"
+        >
+          <option value="">Unassigned</option>
+          {members.map((member) => (
+            <option key={member.user.id} value={member.user.id}>
+              {member.user.name || member.user.email}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="flex gap-2 items-center">
         <input

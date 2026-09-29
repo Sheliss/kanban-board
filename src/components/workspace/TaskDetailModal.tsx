@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateTaskProgress } from "@/actions/task";
+import { deleteTask, updateTaskProgress } from "@/actions/task";
 import { addComment } from "@/actions/comment";
 import Button from "@/components/ui/Button";
 import { Task, Comment } from "./KanbanCard";
@@ -11,6 +11,8 @@ interface TaskDetailModalProps {
   workspaceId: string;
   onClose: () => void;
   onCommentAdded: (newComment: Comment) => void;
+  currentUserId: string;
+  isAdmin: boolean;
 }
 
 export default function TaskDetailModal({
@@ -18,8 +20,14 @@ export default function TaskDetailModal({
   workspaceId,
   onClose,
   onCommentAdded,
+  isAdmin,
+  currentUserId,
 }: TaskDetailModalProps) {
   const [currentProgress, setCurrentProgress] = useState(task.progress);
+  const canDelete =
+    isAdmin ||
+    task.creatorId === currentUserId ||
+    task.assigneeId === currentUserId;
 
   const handlePostComment = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -30,6 +38,13 @@ export default function TaskDetailModal({
     if (res.success && res.comment) {
       onCommentAdded(res.comment);
       form.reset();
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (confirm("Are you sure you want to delete this task?")) {
+      await deleteTask(task.id, workspaceId);
+      onClose();
     }
   };
 
@@ -54,6 +69,17 @@ export default function TaskDetailModal({
         </div>
 
         <div className="p-6 space-y-6 overflow-y-auto flex-1">
+          <div className="flex items-center justify-between bg-surface p-3 rounded-xl border border-border">
+            <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+              Assignee
+            </span>
+            <span className="text-sm font-medium text-text-main">
+              {task.assignee
+                ? task.assignee.name || task.assignee.email
+                : "Unassigned"}
+            </span>
+          </div>
+
           <div>
             <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">
               Description
@@ -127,6 +153,16 @@ export default function TaskDetailModal({
                 </Button>
               </div>
             </form>
+            {canDelete && (
+              <div className="pt-4 border-t border-border flex justify-between items-center">
+                <button
+                  onClick={handleDeleteTask}
+                  className="px-3 py-1.5 text-xs bg-red-50 text-error border border-red-200 hover:bg-red-100 transition-colors rounded-lg font-medium cursor-pointer"
+                >
+                  Delete Task
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { pusherServer } from "@/lib/pusher";
+import { revalidatePath } from "next/cache";
 
 const taskSchema = z.object({
   title: z
@@ -16,6 +17,7 @@ const taskSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val ? parseFloat(val) : null)),
+  assigneeId: z.string().optional(),
   boardId: z.string(),
   workspaceId: z.string(),
 });
@@ -37,6 +39,7 @@ export async function createTask(formData: FormData) {
     title: formData.get("title"),
     description: formData.get("description"),
     estimatedHours: formData.get("estimatedHours"),
+    assigneeId: formData.get("assigneeId"),
     boardId: formData.get("boardId"),
     workspaceId: formData.get("workspaceId"),
   };
@@ -46,8 +49,14 @@ export async function createTask(formData: FormData) {
     throw new Error("Invalid task data");
   }
 
-  const { title, description, estimatedHours, boardId, workspaceId } =
-    validatedFields.data;
+  const {
+    title,
+    description,
+    estimatedHours,
+    assigneeId,
+    boardId,
+    workspaceId,
+  } = validatedFields.data;
 
   const membership = await db.workspaceMember.findUnique({
     where: {
@@ -73,6 +82,8 @@ export async function createTask(formData: FormData) {
       estimatedHours: isNaN(Number(estimatedHours)) ? null : estimatedHours,
       boardId,
       position,
+      creatorId: session.userId,
+      assigneeId: assigneeId || null,
     },
   });
 
@@ -170,4 +181,34 @@ export async function updateTaskProgress(
   });
 
   redirect(`/workspace/${workspaceId}`);
+}
+
+export async function deleteTask(taskId: string, workspaceId: string) {
+  const session = await getSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const membership = await db.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.userId, workspaceId } },
+  });
+  if (!membership) throw new Error("Unauthorized");
+
+  const task = await db.task.findUnique({ where: { id: taskId } });
+  if (!task) throw new Error("Task not found");
+
+  const isAdmin = membership.role === "ADMIN";
+  const isCreator = task.creatorId === session.userId;
+  const isAssignee = task.assigneeId === session.userId;
+
+  if (!isAdmin && !isCreator && !isAssignee) {
+    throw new Error(
+      "Forbidden: You do not have permission to delete this task",
+    );
+  }
+
+  await db.task.delete({ where: { id: taskId } });
+
+  await pusherServer.trigger(`workspace-${workspaceId}`, "task-deleted", {
+    taskId,
+  });
+  revalidatePath(`/workspace/${workspaceId}`);
 }
