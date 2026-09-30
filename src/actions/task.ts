@@ -87,7 +87,7 @@ export async function createTask(formData: FormData) {
     },
   });
 
-  redirect(`/workspace/${workspaceId}`);
+  revalidatePath(`/workspace/${workspaceId}`);
 }
 
 export async function moveTask({
@@ -159,7 +159,7 @@ export async function moveTask({
     taskId,
   });
 
-  redirect(`/workspace/${workspaceId}`);
+  revalidatePath(`/workspace/${workspaceId}`);
 }
 
 export async function updateTaskProgress(
@@ -180,7 +180,7 @@ export async function updateTaskProgress(
     data: { progress: Math.min(100, Math.max(0, progress)) },
   });
 
-  redirect(`/workspace/${workspaceId}`);
+  revalidatePath(`/workspace/${workspaceId}`);
 }
 
 export async function deleteTask(taskId: string, workspaceId: string) {

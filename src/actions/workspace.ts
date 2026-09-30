@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { z } from "zod";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 const workspaceSchema = z.object({
   name: z
@@ -84,5 +85,6 @@ export async function createWorkspace(
     };
   }
 
-  redirect("/dashboard");
+  revalidatePath("/dashboard");
+  return null;
 }

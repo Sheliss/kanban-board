@@ -33,7 +33,7 @@ export async function createInvite(formData: FormData) {
     },
   });
 
-  redirect(`/workspace/${workspaceId}`);
+  revalidatePath(`/workspace/${workspaceId}`);
 }
 
 export async function deleteInvite(inviteId: string, workspaceId: string) {
