@@ -5,6 +5,8 @@ import Link from "next/link";
 import CreateInviteForm from "@/components/workspace/CreateInviteForm";
 import KanbanBoard from "@/components/workspace/KanbanBoard";
 import { deleteInvite } from "@/actions/invite";
+import { headers } from "next/headers";
+import CopyInviteBox from "@/components/workspace/CopyInviteBox";
 
 interface WorkspacePageProps {
   params: Promise<{ workspaceId: string }>;
@@ -14,6 +16,11 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
   const { workspaceId } = await params;
   const session = await getSession();
   if (!session) redirect("/login");
+
+  const headersList = await headers();
+  const host = headersList.get("host") || "localhost:3000";
+  const protocol = host.includes("localhost") ? "http" : "https";
+  const baseUrl = `${protocol}://${host}`;
 
   const membership = await db.workspaceMember.findUnique({
     where: {
@@ -114,7 +121,6 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                   {workspace.invites.map((inv) => {
                     const isExpired =
                       inv.maxUses !== null && inv.useCount >= inv.maxUses;
-
                     const deleteInviteAction = deleteInvite.bind(
                       null,
                       inv.id,
@@ -122,29 +128,15 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                     );
 
                     return (
-                      <div
+                      <CopyInviteBox
                         key={inv.id}
-                        className="p-3 bg-background border border-border rounded-xl flex justify-between items-center"
-                      >
-                        <div>
-                          <span className="font-mono text-xs text-main bg-blue-50 px-2 py-1 rounded border border-border">
-                            /invite/{inv.code}
-                          </span>
-                          <p className="text-xs text-text-muted mt-1">
-                            Uses: {inv.useCount}{" "}
-                            {inv.maxUses ? `/ ${inv.maxUses}` : ""}{" "}
-                            {isExpired && "• (Expired)"}
-                          </p>
-                        </div>
-                        <form action={deleteInviteAction}>
-                          <button
-                            type="submit"
-                            className="px-2.5 py-1 text-xs text-error hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors rounded-lg font-medium cursor-pointer"
-                          >
-                            Delete
-                          </button>
-                        </form>
-                      </div>
+                        baseUrl={baseUrl}
+                        invCode={inv.code}
+                        useCount={inv.useCount}
+                        maxUses={inv.maxUses}
+                        isExpired={isExpired}
+                        deleteAction={deleteInviteAction}
+                      />
                     );
                   })}
                 </div>

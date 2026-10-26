@@ -22,6 +22,19 @@
     --color-error: #ff3b30;
     --color-warning: #ff9500;
     --color-success: #20bf55;
+
+    --animate-float-fade: float-fade 1.5s ease-out forwards;
+
+    @keyframes float-fade {
+        0% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        100% {
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+    }
 }
 
 @media (prefers-color-scheme: dark) {
